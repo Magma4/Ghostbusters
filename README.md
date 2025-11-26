@@ -57,6 +57,40 @@ The primary task is to implement inference algorithms to track the ghosts using 
 - Updates beliefs based on noisy distance observations
 - Uses the rule: P(GhostPosition | Observation) ∝ P(Observation | GhostPosition) × P(GhostPosition)
 
+### Question 7: Exact Inference Time Elapse (2 points)
+- **File**: `inference.py`
+- **Function**: `elapseTime(gameState)` in `ExactInference` class
+- Implements the prediction step of the forward algorithm
+- Updates beliefs for the next time step using transition probabilities
+- Uses the rule: P(Ghost at newPos at t+1) = Σ P(newPos | oldPos) × P(oldPos)
+
+### Question 8: Greedy Agent (2 points)
+- **File**: `bustersAgents.py`
+- **Function**: `chooseAction(gameState)` in `GreedyBustersAgent` class
+- Implements a greedy strategy for Pacman to catch ghosts
+- Finds the most likely position for each living ghost
+- Chooses actions that minimize distance to the closest ghost
+
+### Question 9: Approximate Inference Initialization (1 point)
+- **File**: `inference.py`
+- **Function**: `initializeUniformly(gameState)` in `ParticleFilter` class
+- Initializes particles uniformly across legal positions
+- Distributes particles evenly to ensure uniform prior distribution
+
+### Question 10: Approximate Inference Observation (2 points)
+- **File**: `inference.py`
+- **Function**: `observeUpdate(observation, gameState)` in `ParticleFilter` class
+- Updates particle beliefs based on observations using weighted resampling
+- Assigns weights to particles based on observation probabilities
+- Resamples particles according to their weights (particles consistent with observations are more likely to be selected)
+
+### Question 11: Approximate Inference Time Elapse (2 points)
+- **File**: `inference.py`
+- **Function**: `elapseTime(gameState)` in `ParticleFilter` class
+- Implements the prediction step for particle filtering
+- Samples new positions for each particle based on transition distributions
+- Uses random sampling to approximate the belief distribution after time elapse
+
 ## Running the Project
 
 ### Play the Game
@@ -73,6 +107,11 @@ python autograder.py -q q3
 python autograder.py -q q4
 python autograder.py -q q5
 python autograder.py -q q6
+python autograder.py -q q7
+python autograder.py -q q8
+python autograder.py -q q9
+python autograder.py -q q10
+python autograder.py -q q11
 
 # Run a specific test
 python autograder.py -t test_cases/q1/1-small-board
@@ -81,7 +120,7 @@ python autograder.py -t test_cases/q1/1-small-board
 python autograder.py -q q1 --no-graphics
 
 # Run all implemented questions
-python autograder.py -q q1 -q q2 -q q3 -q q4 -q q5 -q q6 --no-graphics
+python autograder.py -q q1 -q q2 -q q3 -q q4 -q q5 -q q6 -q q7 -q q8 -q q9 -q q10 -q q11 --no-graphics
 ```
 
 ### Explore Bayes Nets
@@ -91,9 +130,10 @@ python bayesNet.py
 
 ## Project Structure
 
-- `inference.py` - Main inference algorithms and Bayes Net construction
+- `inference.py` - Main inference algorithms and Bayes Net construction (exact and approximate inference)
 - `factorOperations.py` - Factor operations (join, eliminate)
 - `bayesNet.py` - Bayes Net and Factor class implementations
+- `bustersAgents.py` - Agent implementations (GreedyBustersAgent)
 - `busters.py` - Main game file for Ghostbusters
 - `test_cases/` - Test cases for each question
 - `layouts/` - Game layout files
@@ -107,8 +147,13 @@ All implemented questions pass their respective test suites:
 - ✅ Question 4: 2/2 points - Variable Elimination
 - ✅ Question 5: 1/1 points - DiscreteDistribution and Observation Probability
 - ✅ Question 6: 2/2 points - Exact Inference Observation
+- ✅ Question 7: 2/2 points - Exact Inference Time Elapse
+- ✅ Question 8: 2/2 points - Greedy Agent
+- ✅ Question 9: 1/1 points - Approximate Inference Initialization
+- ✅ Question 10: 2/2 points - Approximate Inference Observation
+- ✅ Question 11: 2/2 points - Approximate Inference Time Elapse
 
-**Total: 12/12 points implemented**
+**Total: 21/21 points implemented**
 
 ## License
 
