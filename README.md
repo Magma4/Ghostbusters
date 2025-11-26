@@ -64,7 +64,7 @@ The primary task is to implement inference algorithms to track the ghosts using 
 - Updates beliefs for the next time step using transition probabilities
 - Uses the rule: P(Ghost at newPos at t+1) = Σ P(newPos | oldPos) × P(oldPos)
 
-### Question 8: Greedy Agent (2 points)
+### Question 8: Greedy Agent (1 point)
 - **File**: `bustersAgents.py`
 - **Function**: `chooseAction(gameState)` in `GreedyBustersAgent` class
 - Implements a greedy strategy for Pacman to catch ghosts
@@ -148,12 +148,12 @@ All implemented questions pass their respective test suites:
 - ✅ Question 5: 1/1 points - DiscreteDistribution and Observation Probability
 - ✅ Question 6: 2/2 points - Exact Inference Observation
 - ✅ Question 7: 2/2 points - Exact Inference Time Elapse
-- ✅ Question 8: 2/2 points - Greedy Agent
+- ✅ Question 8: 1/1 points - Greedy Agent
 - ✅ Question 9: 1/1 points - Approximate Inference Initialization
 - ✅ Question 10: 2/2 points - Approximate Inference Observation
 - ✅ Question 11: 2/2 points - Approximate Inference Time Elapse
 
-**Total: 21/21 points implemented**
+**Total: 20/20 points implemented**
 
 ## License
 
