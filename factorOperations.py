@@ -102,38 +102,46 @@ def joinFactors(factors: List[Factor]):
 
 
     "*** YOUR CODE HERE ***"
-    # Convert to list if needed (handles dict_values and other iterables)
+    # Step 1: Convert input to a list (handles different input types like dict_values)
     factors = list(factors)
 
-    # Handle empty list case
+    # Step 2: Check that we have at least one factor to join
     if len(factors) == 0:
         raise ValueError("joinFactors requires at least one factor")
 
-    # Get variableDomainsDict from first factor (all factors have the same one)
+    # Step 3: Get the variable domains dictionary
+    # All factors come from the same Bayes Net, so they share the same domains
     variableDomainsDict = factors[0].variableDomainsDict()
 
-    # Calculate unconditioned variables: union of all unconditioned variables from any input factor
+    # Step 4: Determine which variables will be unconditioned in the result
+    # Rule: A variable is unconditioned if it's unconditioned in ANY input factor
+    # Example: joinFactors(P(X|Y), P(Y)) -> X and Y are both unconditioned in result
     unconditionedVars = set()
     for factor in factors:
         unconditionedVars.update(factor.unconditionedVariables())
 
-    # Calculate conditioned variables: union of all conditioned variables from any input factor,
-    # minus any that appear as unconditioned in the result
+    # Step 5: Determine which variables will be conditioned in the result
+    # Rule: A variable is conditioned if it's conditioned in ANY input factor,
+    #       BUT NOT if it's unconditioned in the result (from step 4)
+    # Example: joinFactors(P(X|Y,Z), P(Y)) -> X and Y are unconditioned, Z is conditioned
     conditionedVars = set()
     for factor in factors:
         conditionedVars.update(factor.conditionedVariables())
 
-    # Remove any variables that are unconditioned in the result from conditioned variables
+    # Remove variables that became unconditioned (they can't be both)
     conditionedVars = conditionedVars - unconditionedVars
 
-    # Create new factor with the calculated variables
+    # Step 6: Create a new factor with the calculated variables
     resultFactor = Factor(list(unconditionedVars), list(conditionedVars), variableDomainsDict)
 
-    # For each possible assignment in the result factor, multiply probabilities from input factors
+    # Step 7: Fill in the probability table using the product rule
+    # For each row in the result factor, multiply the probabilities from all input factors
+    # This implements: P(A, B, C) = P(A|B) * P(B) when joining those factors
     for assignmentDict in resultFactor.getAllPossibleAssignmentDicts():
         product = 1.0
         for factor in factors:
             # getProbability can handle assignmentDicts with extra variables
+            # (it just ignores variables not in that factor)
             product *= factor.getProbability(assignmentDict)
         resultFactor.setProbability(assignmentDict, product)
 
@@ -188,28 +196,34 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        # Get variableDomainsDict from input factor (should remain the same)
+        # Step 1: Get the variable domains dictionary (stays the same)
+        # This tells us what values each variable can take
         variableDomainsDict = factor.variableDomainsDict()
 
-        # Calculate unconditioned variables: all unconditioned variables except the eliminationVariable
+        # Step 2: Determine the variables in the result factor
+        # After eliminating a variable, it's removed from unconditioned variables
+        # Example: eliminate(P(X, Y | Z), Y) -> result has X unconditioned, Z conditioned
         unconditionedVars = set(factor.unconditionedVariables())
         unconditionedVars.remove(eliminationVariable)
 
-        # Conditioned variables remain the same (we only eliminate unconditioned variables)
+        # Conditioned variables stay the same (we only eliminate unconditioned variables)
         conditionedVars = set(factor.conditionedVariables())
 
-        # Create new factor without the eliminationVariable
+        # Step 3: Create a new factor without the variable we're eliminating
         resultFactor = Factor(list(unconditionedVars), list(conditionedVars), variableDomainsDict)
 
-        # For each possible assignment in the result factor, sum over all values of eliminationVariable
+        # Step 4: Fill in probabilities using marginalization (summing out the variable)
+        # For each row in the result, we sum over all possible values of the eliminated variable
+        # Example: If eliminating Y from P(X, Y), we compute P(X) = sum over all Y values of P(X, Y)
         for assignmentDict in resultFactor.getAllPossibleAssignmentDicts():
             sum_prob = 0.0
-            # Sum over all possible values of the eliminationVariable
+            # Sum over all possible values that the eliminated variable can take
             for eliminationValue in variableDomainsDict[eliminationVariable]:
-                # Create assignment dict that includes the eliminationVariable
+                # Create a full assignment that includes the eliminated variable
+                # This lets us look up the probability in the original factor
                 fullAssignmentDict = assignmentDict.copy()
                 fullAssignmentDict[eliminationVariable] = eliminationValue
-                # Add the probability from the input factor
+                # Add this probability to our sum
                 sum_prob += factor.getProbability(fullAssignmentDict)
             # Set the summed probability in the result factor
             resultFactor.setProbability(assignmentDict, sum_prob)

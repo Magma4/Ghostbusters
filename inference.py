@@ -18,7 +18,7 @@ from typing import List, Dict, Tuple
 import busters
 import game
 import bayesNet as bn
-from bayesNet import normalize
+from bayesNet import normalize, Factor
 import hunters
 from util import manhattanDistance, raiseNotDefined
 from factorOperations import joinFactorsByVariableWithCallTracking, joinFactors
@@ -61,33 +61,38 @@ def constructBayesNet(gameState: hunters.GameState):
     variableDomainsDict = {}
 
     "*** YOUR CODE HERE ***"
-    # Add all variables
+    # Step 1: Define all the variables (nodes) in our Bayes Net
+    # We have 5 variables: Pacman's position, two ghosts' positions, and two observations
     variables = [PAC, GHOST0, GHOST1, OBS0, OBS1]
 
-    # Add edges based on the diagram:
-    # Ghost0 -> Observation0
-    # Pacman -> Observation0
-    # Pacman -> Observation1
-    # Ghost1 -> Observation1
+    # Step 2: Define the edges (dependencies) between variables
+    # Each edge (from, to) means "from" influences "to"
+    # Observation0 depends on both Ghost0 and Pacman positions
+    # Observation1 depends on both Ghost1 and Pacman positions
     edges = [
-        (GHOST0, OBS0),
-        (PAC, OBS0),
-        (PAC, OBS1),
-        (GHOST1, OBS1)
+        (GHOST0, OBS0),  # Ghost0's position affects Observation0
+        (PAC, OBS0),     # Pacman's position affects Observation0
+        (PAC, OBS1),     # Pacman's position affects Observation1
+        (GHOST1, OBS1)   # Ghost1's position affects Observation1
     ]
 
-    # Create domains for position variables (Pacman, Ghost0, Ghost1)
-    # All possible (x, y) tuples in the grid
+    # Step 3: Define the possible values (domain) for each variable
+
+    # For position variables (Pacman, Ghost0, Ghost1):
+    # They can be at any (x, y) coordinate in the grid
+    # We create a list of all possible positions: (0,0), (0,1), ..., (width-1, height-1)
     position_domain = [(x, y) for x in range(X_RANGE) for y in range(Y_RANGE)]
     variableDomainsDict[PAC] = position_domain
     variableDomainsDict[GHOST0] = position_domain
     variableDomainsDict[GHOST1] = position_domain
 
-    # Create domains for observation variables (Observation0, Observation1)
-    # Observations are non-negative integers representing Manhattan distances ± noise
-    # Maximum Manhattan distance in grid: (X_RANGE - 1) + (Y_RANGE - 1) = X_RANGE + Y_RANGE - 2
-    # With MAX_NOISE = 7, max observation = max_distance + MAX_NOISE
+    # For observation variables (Observation0, Observation1):
+    # Observations are noisy Manhattan distances (non-negative integers)
+    # The maximum possible distance is from one corner to the opposite corner
+    # Formula: (width-1) + (height-1) = width + height - 2
+    # Plus we add MAX_NOISE (7) to account for noise in the measurement
     max_observation = (X_RANGE - 1) + (Y_RANGE - 1) + MAX_NOISE
+    # Create a list of all possible observation values: 0, 1, 2, ..., max_observation
     observation_domain = list(range(max_observation + 1))
     variableDomainsDict[OBS0] = observation_domain
     variableDomainsDict[OBS1] = observation_domain
@@ -211,7 +216,56 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
             eliminationOrder = sorted(list(eliminationVariables))
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Get all Conditional Probability Tables (CPTs) from the Bayes Net
+        # We pass in evidence to reduce the size of the probability tables
+        # (if we know some variables, we only need rows matching those values)
+        currentFactorsList = bayesNet.getAllCPTsWithEvidence(evidenceDict)
+
+        # Step 2: Variable Elimination Algorithm
+        # Instead of joining everything first (like enumeration), we interleave:
+        # For each hidden variable, we join factors containing it, then eliminate it immediately
+        # This is more efficient because we work with smaller factors
+
+        for eliminationVariable in eliminationOrder:
+            # Step 2a: Join all factors that contain this variable
+            # This combines the factors into one larger factor
+            # Returns: (factors that don't contain this variable, the joined factor)
+            currentFactorsList, joinedFactor = joinFactorsByVariable(currentFactorsList, eliminationVariable)
+
+            # Step 2b: Check if we can eliminate this variable
+            # If the joined factor has only 1 unconditioned variable, we can't eliminate
+            # (eliminating would leave us with no unconditioned variables, which is invalid)
+            # So we just discard the factor in that case
+            if len(joinedFactor.unconditionedVariables()) > 1:
+                # We can safely eliminate: sum out this variable from the factor
+                # This removes the variable by summing over all its possible values
+                eliminatedFactor = eliminate(joinedFactor, eliminationVariable)
+                # Add the result back to our list of factors
+                currentFactorsList.append(eliminatedFactor)
+            # If only 1 unconditioned variable remains, discard the factor (don't add it back)
+
+        # Step 3: Join any remaining factors
+        # After eliminating all hidden variables, we may have multiple disconnected factors
+        # Join them all together to get the final result
+        if len(currentFactorsList) > 0:
+            resultFactor = joinFactors(currentFactorsList)
+        else:
+            # Edge case: if no factors remain, create an empty factor
+            # This shouldn't happen in practice, but we handle it to avoid errors
+            evidenceVariablesSet = set(evidenceDict.keys())
+            queryVariablesSet = set(queryVariables)
+            variableDomainsDict = bayesNet.variableDomainsDict()
+            resultFactor = Factor(list(queryVariablesSet), list(evidenceVariablesSet), variableDomainsDict)
+            # Set all probabilities to 1.0 (will be normalized below)
+            for assignmentDict in resultFactor.getAllPossibleAssignmentDicts():
+                resultFactor.setProbability(assignmentDict, 1.0)
+
+        # Step 4: Normalize the result
+        # The probabilities should sum to 1 to form a proper conditional probability distribution
+        # P(queryVariables | evidenceDict) must sum to 1 for each assignment of evidence
+        queryConditionedOnEvidence = normalize(resultFactor)
+
+        return queryConditionedOnEvidence
         "*** END YOUR CODE HERE ***"
 
 
@@ -352,7 +406,20 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Calculate the total sum of all values in the distribution
+        total = self.total()
+
+        # Step 2: Handle edge case - if total is 0, do nothing
+        # This happens when the distribution is empty or all values are zero
+        if total == 0:
+            return
+
+        # Step 3: Normalize each value by dividing by the total
+        # This preserves the proportions while making the sum equal to 1
+        # Example: If we have {'a': 1, 'b': 2, 'c': 2}, total = 5
+        # After normalization: {'a': 0.2, 'b': 0.4, 'c': 0.4}
+        for key in self.keys():
+            self[key] = self[key] / total
         "*** END YOUR CODE HERE ***"
 
     def sample(self):
@@ -377,7 +444,29 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Calculate the total sum of all values
+        # This gives us the range for our random number
+        total = self.total()
+
+        # Step 2: Generate a random number between 0 and total
+        # This will help us pick which key to sample
+        pick = random.random() * total
+
+        # Step 3: Use cumulative probability to find which key to return
+        # We'll iterate through keys and accumulate their values
+        # When our accumulated sum exceeds the random pick, we've found our key
+        # Example: If dist = {'a': 1, 'b': 2, 'c': 2} and total = 5
+        # Ranges: 'a' = [0, 1), 'b' = [1, 3), 'c' = [3, 5)
+        # If pick = 2.5, we'd return 'b' because 1 < 2.5 < 3
+        cumulative = 0.0
+        for key, value in self.items():
+            cumulative += value
+            if pick < cumulative:
+                return key
+
+        # Step 4: Fallback (shouldn't happen, but return last key if needed)
+        # This handles floating point precision issues
+        return list(self.keys())[-1]
         "*** END YOUR CODE HERE ***"
 
 
@@ -452,7 +541,29 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Handle the special case when ghost is in jail
+        # When a ghost is captured and sent to jail, the sensor deterministically returns None
+        # So: P(observation=None | ghost in jail) = 1.0
+        #     P(observation=anything else | ghost in jail) = 0.0
+        if ghostPosition == jailPosition:
+            if noisyDistance is None:
+                return 1.0
+            else:
+                return 0.0
+
+        # Step 2: Handle the case when observation is None but ghost is not in jail
+        # If observation is None, it can only happen when ghost is in jail
+        # So: P(observation=None | ghost not in jail) = 0.0
+        if noisyDistance is None:
+            return 0.0
+
+        # Step 3: Normal case - ghost is not in jail and we have a valid observation
+        # Calculate the true Manhattan distance between Pacman and the ghost
+        trueDistance = manhattanDistance(pacmanPosition, ghostPosition)
+
+        # Step 4: Use the helper function to get P(noisyDistance | trueDistance)
+        # This accounts for the noise in the sensor readings
+        return busters.getObservationProbability(noisyDistance, trueDistance)
         "*** END YOUR CODE HERE ***"
 
     def setGhostPosition(self, gameState, ghostPosition, index):
