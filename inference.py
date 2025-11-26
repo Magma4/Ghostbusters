@@ -894,5 +894,29 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Create a new list to store particles after time elapse
+        # Each particle will be advanced one time step based on the transition model
+        newParticles = []
+
+        # Step 2: For each particle, sample its next position
+        # This is the prediction step in particle filtering
+        # Unlike exact inference (which computes probabilities for all positions),
+        # particle filtering samples new positions for each particle
+        for oldParticle in self.particles:
+            # Step 2a: Get the transition distribution for this particle
+            # This gives us P(newPos | oldParticle) - where the ghost can move from oldParticle
+            newPosDist = self.getPositionDistribution(gameState, oldParticle)
+
+            # Step 2b: Sample a new position from the transition distribution
+            # This randomly selects a new position according to the transition probabilities
+            # Particles at positions with higher transition probabilities are more likely to be selected
+            newParticle = newPosDist.sample()
+
+            # Step 2c: Add the sampled position to our new particle list
+            newParticles.append(newParticle)
+
+        # Step 3: Update self.particles with the new particles
+        # These particles now represent our predicted belief about where the ghost will be
+        # after one time step
+        self.particles = newParticles
         "*** END YOUR CODE HERE ***"
