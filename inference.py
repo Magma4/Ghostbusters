@@ -720,7 +720,44 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Mathematical equation: P(Ghost at newPos at t+1) =
+        #   sum over all oldPos of P(Ghost at newPos at t+1 | Ghost at oldPos at t) * P(Ghost at oldPos at t)
+        # This is the prediction step in the forward algorithm
+
+        # Step 1: Create a new belief distribution for the next time step
+        # We'll compute predicted beliefs based on transition probabilities
+        newBeliefs = DiscreteDistribution()
+
+        # Step 2: For each possible new position, compute the predicted belief
+        # We need to sum over all possible old positions
+        for newPos in self.allPositions:
+            # Initialize the probability for this new position
+            predictedProb = 0.0
+
+            # Step 3: Sum over all possible old positions
+            # For each old position, multiply:
+            #   - P(Ghost at newPos | Ghost at oldPos) [transition probability]
+            #   - P(Ghost at oldPos) [current belief]
+            for oldPos in self.allPositions:
+                # Get the current belief that ghost was at oldPos
+                priorBelief = self.beliefs[oldPos]
+
+                # Get the transition distribution: P(newPos | oldPos)
+                # This tells us where the ghost can move from oldPos
+                transitionDist = self.getPositionDistribution(gameState, oldPos)
+
+                # Get the probability of transitioning to newPos from oldPos
+                transitionProb = transitionDist[newPos]
+
+                # Add to the predicted probability: prior * transition
+                predictedProb += priorBelief * transitionProb
+
+            # Step 4: Store the predicted belief for this new position
+            newBeliefs[newPos] = predictedProb
+
+        # Step 5: Update self.beliefs with the new predicted beliefs
+        # This represents our belief about where the ghost will be after one time step
+        self.beliefs = newBeliefs
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
