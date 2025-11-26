@@ -31,6 +31,32 @@ The primary task is to implement inference algorithms to track the ghosts using 
 - Sums over all values of the eliminated variable
 - Returns a new factor without the eliminated variable
 
+### Question 4: Variable Elimination (2 points)
+- **File**: `inference.py`
+- **Function**: `inferenceByVariableElimination(bayesNet, queryVariables, evidenceDict, eliminationOrder)`
+- Implements probabilistic inference using variable elimination algorithm
+- Interleaves join and eliminate operations for efficiency
+- More efficient than enumeration for large Bayes Nets
+
+### Question 5a: DiscreteDistribution Class (0 points, required for later questions)
+- **File**: `inference.py`
+- **Methods**: `normalize()` and `sample()`
+- `normalize()`: Normalizes distribution so values sum to 1, preserving proportions
+- `sample()`: Performs weighted random sampling from the distribution
+
+### Question 5b: Observation Probability (1 point)
+- **File**: `inference.py`
+- **Function**: `getObservationProb(noisyDistance, pacmanPosition, ghostPosition, jailPosition)`
+- Calculates P(noisyDistance | pacmanPosition, ghostPosition)
+- Handles special case when ghost is in jail (deterministic None observation)
+
+### Question 6: Exact Inference Observation (2 points)
+- **File**: `inference.py`
+- **Function**: `observeUpdate(observation, gameState)` in `ExactInference` class
+- Implements Bayesian belief update using the forward algorithm
+- Updates beliefs based on noisy distance observations
+- Uses the rule: P(GhostPosition | Observation) ∝ P(Observation | GhostPosition) × P(GhostPosition)
+
 ## Running the Project
 
 ### Play the Game
@@ -44,12 +70,18 @@ python busters.py
 python autograder.py -q q1
 python autograder.py -q q2
 python autograder.py -q q3
+python autograder.py -q q4
+python autograder.py -q q5
+python autograder.py -q q6
 
 # Run a specific test
 python autograder.py -t test_cases/q1/1-small-board
 
 # Run without graphics (faster)
 python autograder.py -q q1 --no-graphics
+
+# Run all implemented questions
+python autograder.py -q q1 -q q2 -q q3 -q q4 -q q5 -q q6 --no-graphics
 ```
 
 ### Explore Bayes Nets
@@ -69,9 +101,14 @@ python bayesNet.py
 ## Testing
 
 All implemented questions pass their respective test suites:
-- ✅ Question 1: 2/2 points
-- ✅ Question 2: 3/3 points
-- ✅ Question 3: 2/2 points
+- ✅ Question 1: 2/2 points - Bayes Net Structure
+- ✅ Question 2: 3/3 points - Join Factors
+- ✅ Question 3: 2/2 points - Eliminate Variables
+- ✅ Question 4: 2/2 points - Variable Elimination
+- ✅ Question 5: 1/1 points - DiscreteDistribution and Observation Probability
+- ✅ Question 6: 2/2 points - Exact Inference Observation
+
+**Total: 12/12 points implemented**
 
 ## License
 
