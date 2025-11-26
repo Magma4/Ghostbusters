@@ -846,7 +846,42 @@ class ParticleFilter(InferenceModule):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Get Pacman's position and jail position
+        # These are needed to calculate observation probabilities
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+
+        # Step 2: Create a weight distribution over positions
+        # Each position's weight = sum of P(observation | pacmanPosition, position) for all particles at that position
+        # Positions that are more consistent with the observation get higher weights
+        weightDist = DiscreteDistribution()
+
+        for particle in self.particles:
+            # Calculate the probability of seeing this observation if ghost is at particle position
+            # This is the weight for this particle
+            weight = self.getObservationProb(observation, pacmanPosition, particle, jailPosition)
+            # Sum weights for particles at the same position (using += handles this)
+            weightDist[particle] += weight
+
+        # Step 3: Handle special case - if all particles have zero weight
+        # This happens when the observation is inconsistent with all current particles
+        # In this case, we reinitialize particles uniformly (reset our beliefs)
+        if weightDist.total() == 0:
+            self.initializeUniformly(gameState)
+            return
+
+        # Step 4: Resample particles from the weighted distribution
+        # Particles with higher weights (more consistent with observation) are more likely to be sampled
+        # This creates a new set of particles that better reflect our updated beliefs
+        newParticles = []
+        for _ in range(self.numParticles):
+            # Sample a particle according to its weight
+            # Particles with higher weights are more likely to be selected
+            sampledParticle = weightDist.sample()
+            newParticles.append(sampledParticle)
+
+        # Step 5: Update self.particles with the resampled particles
+        self.particles = newParticles
         "*** END YOUR CODE HERE ***"
 
     ########### ########### ###########
