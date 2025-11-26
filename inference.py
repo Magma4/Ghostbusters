@@ -789,7 +789,15 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Initialize particles evenly distributed across legal positions
+        # We want a uniform prior, so we cycle through positions evenly
+        # Example: If we have 10 particles and 5 positions, we get 2 particles per position
+        # Using the mod operator: position[i] = legalPositions[i % len(legalPositions)]
+        for i in range(self.numParticles):
+            # Cycle through legal positions using modulo operator
+            # This ensures even distribution: each position gets approximately the same number of particles
+            positionIndex = i % len(self.legalPositions)
+            self.particles.append(self.legalPositions[positionIndex])
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
@@ -801,7 +809,24 @@ class ParticleFilter(InferenceModule):
         This function should return a normalized distribution.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Create a DiscreteDistribution to store the belief
+        # This will count how many particles are at each position
+        beliefDist = DiscreteDistribution()
+
+        # Step 2: Count particles at each position
+        # Each particle represents a sample of where the ghost might be
+        # The more particles at a position, the higher our belief that the ghost is there
+        for particle in self.particles:
+            # Increment the count for this position
+            # If the position doesn't exist in the distribution, it defaults to 0
+            beliefDist[particle] += 1.0
+
+        # Step 3: Normalize the distribution
+        # This converts counts into probabilities (sums to 1)
+        # After normalization, beliefDist[position] = P(ghost at position | all evidence)
+        beliefDist.normalize()
+
+        return beliefDist
         "*** END YOUR CODE HERE ***"
 
     ########### ########### ###########

@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -131,7 +131,7 @@ class GreedyBustersAgent(BustersAgent):
         "Pre-computes the distance between every two points."
         BustersAgent.registerInitialState(self, gameState)
         self.distancer = Distancer(gameState.data.layout, False)
-    
+
     ########### ########### ###########
     ########### QUESTION 8  ###########
     ########### ########### ###########
@@ -149,5 +149,47 @@ class GreedyBustersAgent(BustersAgent):
             [beliefs for i, beliefs in enumerate(self.ghostBeliefs)
              if livingGhosts[i+1]]
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Step 1: Find the most likely position for each uncaptured ghost
+        # For each ghost's belief distribution, find the position with highest probability
+        mostLikelyPositions = []
+        for dist in livingGhostPositionDistributions:
+            mostLikelyPos = dist.argMax()
+            if mostLikelyPos is not None:
+                mostLikelyPositions.append(mostLikelyPos)
+
+        # Step 2: Handle edge case - if no living ghosts, just stop
+        if len(mostLikelyPositions) == 0:
+            return Directions.STOP
+
+        # Step 3: Find the closest ghost among the most likely positions
+        # Calculate maze distance from Pacman to each most likely position
+        # and find the minimum
+        closestGhostPos = None
+        minDistance = float('inf')
+        for ghostPos in mostLikelyPositions:
+            distance = self.distancer.getDistance(pacmanPosition, ghostPos)
+            if distance < minDistance:
+                minDistance = distance
+                closestGhostPos = ghostPos
+
+        # Step 4: Choose the action that minimizes distance to the closest ghost
+        # For each legal action, compute the successor position
+        # Then compute the maze distance from successor to closest ghost
+        # Choose the action that results in the minimum distance
+        bestAction = Directions.STOP
+        bestDistance = float('inf')
+
+        for action in legal:
+            # Get the position Pacman would be at after taking this action
+            successorPosition = Actions.getSuccessor(pacmanPosition, action)
+
+            # Calculate maze distance from successor to closest ghost
+            distance = self.distancer.getDistance(successorPosition, closestGhostPos)
+
+            # If this action gets us closer, remember it
+            if distance < bestDistance:
+                bestDistance = distance
+                bestAction = action
+
+        return bestAction
         "*** END YOUR CODE HERE ***"
