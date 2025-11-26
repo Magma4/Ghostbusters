@@ -1,6 +1,6 @@
 # Ghostbusters and Bayes Nets
 
-A UC Berkeley CS188 project implementing probabilistic inference using Bayes Nets to track invisible ghosts in a Pacman game.
+A project implementing probabilistic inference using Bayes Nets to track invisible ghosts in a Pacman game.
 
 ## Project Overview
 
@@ -73,11 +73,6 @@ All implemented questions pass their respective test suites:
 - ✅ Question 2: 3/3 points
 - ✅ Question 3: 2/2 points
 
-## Attribution
-
-This project is part of the UC Berkeley CS188 course. The core projects and autograders were primarily created by John DeNero (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu). Student side autograding was added by Brad Miller, Nick Hay, and Pieter Abbeel (pabbeel@cs.berkeley.edu).
-
 ## License
 
-Licensing Information: You are free to use or extend these projects for educational purposes provided that (1) you do not distribute or publish solutions, (2) you retain this notice, and (3) you provide clear attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-
+Licensing Information: You are free to use or extend these projects for educational purposes provided that (1) you do not distribute or publish solutions, and (2) you retain this notice.
