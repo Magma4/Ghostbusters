@@ -676,7 +676,33 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Mathematical equation: P(GhostPosition | Observation) ∝ P(Observation | GhostPosition) * P(GhostPosition)
+        # This is the Bayesian update rule where we multiply the prior belief by the likelihood
+
+        # Step 1: Get Pacman's current position and the jail position
+        # These are needed to calculate the observation probability
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+
+        # Step 2: Update beliefs for every possible ghost position
+        # We iterate through all positions (legal positions + jail)
+        for position in self.allPositions:
+            # Step 2a: Get the prior belief P(GhostPosition)
+            # This is the current probability that the ghost is at this position
+            priorBelief = self.beliefs[position]
+
+            # Step 2b: Get the likelihood P(Observation | GhostPosition)
+            # This is the probability of seeing this observation if the ghost is at this position
+            # Uses the getObservationProb method we implemented earlier
+            likelihood = self.getObservationProb(observation, pacmanPosition, position, jailPosition)
+
+            # Step 2c: Update the belief using Bayes' rule
+            # New belief = prior * likelihood (we'll normalize later)
+            # This gives us P(GhostPosition | Observation) up to a normalization constant
+            self.beliefs[position] = priorBelief * likelihood
+
+        # Step 3: Normalize the beliefs (done after the code block)
+        # This ensures all probabilities sum to 1, making it a proper probability distribution
         "*** END YOUR CODE HERE ***"
         self.beliefs.normalize()
 
